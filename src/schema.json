@@ -1,246 +1,209 @@
 {
-  "title": "NotifyConfig",
-  "description": "The Config of docker-notify",
-  "type": "object",
-  "properties": {
-    "checkInterval": {
-      "description": "The interval checking for updates in Dockerhub (in Minutes)",
-      "type": "integer",
-      "default": 60
-    },
-    "notifyServices": {
-      "type": "array",
-      "minItems": 1,
-      "description": "An array of notify-services, specify here which images you want to be notified about",
-      "items": {
-        "description": "A notify service consists of an docker image and minimum one webhook/mailhook",
-        "type": "object",
-        "properties": {
-          "image": {
-            "description": "The imagename used by docker pull",
-            "type": "string"
-          },
-          "actions": {
-            "description": "The hooks, that are called after an update is available, can be web- or mailhooks",
-            "type": [
-              "array",
-              "object"
-            ],
+    "title": "NotifyConfig",
+    "description": "The Config of docker-notify",
+    "type": "object",
+    "properties": {
+        "checkInterval": {
+            "description": "The interval checking for updates in Dockerhub (in Minutes)",
+            "type": "integer",
+            "default": 60
+        },
+        "notifyServices": {
+            "type": "array",
             "minItems": 1,
+            "description": "An array of notify-services, specify here which images you want to be notified about",
             "items": {
-              "anyOf": [
-                {
-                  "type": "object",
-                  "description": "A webhook instance consists of the reference in the webHooks Array and the type specified as webHook",
-                  "properties": {
-                    "type": {
-                      "type": "string",
-                      "description": "As we are creating a webhook, this can only be webHook",
-                      "enum": [
-                        "webHook"
-                      ]
+                "description": "A notify service consists of an docker image and minimum one webhook/mailhook",
+                "type": "object",
+                "properties": {
+                    "image": {
+                        "description": "The imagename used by docker pull",
+                        "type": "string"
                     },
-                    "instance": {
-                      "type": "string",
-                      "description": "A reference to a object in the list of webhooks (Reference to id)"
+                    "actions": {
+                        "description": "The hooks, that are called after an update is available, can be web- or mailhooks",
+                        "type": ["array", "object"],
+                        "minItems": 1,
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "object",
+                                    "description": "A webhook instance consists of the reference in the webHooks Array and the type specified as webHook",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "As we are creating a webhook, this can only be webHook",
+                                            "enum": ["webHook"]
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "A reference to a object in the list of webhooks (Reference to id)"
+                                        }
+                                    },
+                                    "required": ["type", "instance"],
+                                    "additionalProperties": false
+                                },
+                                {
+                                    "type": "object",
+                                    "description": "A mailhook instance consists of the reference in the webHooks Array and the type specified as webHook. Als the recipient of the mail must be specified",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "As we are creating a mailhook, this can only be mailHook",
+                                            "enum": ["mailHook"]
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "A reference to a object in the list of mailhooks (Reference to id)"
+                                        },
+                                        "recipient": {
+                                            "type": "string",
+                                            "description": "The mailreciepeint"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "instance",
+                                        "recipient"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                {
+                                    "type": "object",
+                                    "description": "A twitter instance consists of the reference in the twitter Array and the type specified as twitter",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "description": "As we are creating a twitter API instance, this can only be twitter",
+                                            "enum": ["twitter"]
+                                        },
+                                        "instance": {
+                                            "type": "string",
+                                            "description": "A reference to a object in the list of webhooks (Reference to id)"
+                                        }
+                                    },
+                                    "required": ["type", "instance"],
+                                    "additionalProperties": false
+                                }
+                            ]
+                        },
+                        "additionalProperties": false
                     }
-                  },
-                  "required": [
-                    "type",
-                    "instance"
-                  ],
-                  "additionalProperties": false
                 },
-                {
-                  "type": "object",
-                  "description": "A mailhook instance consists of the reference in the webHooks Array and the type specified as webHook. Als the recipient of the mail must be specified",
-                  "properties": {
-                    "type": {
-                      "type": "string",
-                      "description": "As we are creating a mailhook, this can only be mailHook",
-                      "enum": [
-                        "mailHook"
-                      ]
+                "required": ["image", "actions"],
+                "additionalProperties": false
+            }
+        },
+        "smtpServer": {
+            "type": "object",
+            "patternProperties": {
+                "^..*$": {
+                    "type": "object",
+                    "properties": {
+                        "host": {
+                            "type": "string",
+                            "format": "hostname",
+                            "default": "127.0.0.1"
+                        },
+                        "port": {
+                            "type": "number",
+                            "minimum": 1,
+                            "maximum": 65535,
+                            "default": 25
+                        },
+                        "secure": {
+                            "type": "boolean",
+                            "default": true
+                        },
+                        "sendername": {
+                            "type": "string",
+                            "minLength": 3
+                        },
+                        "senderadress": {
+                            "type": "string",
+                            "format": "email"
+                        },
+                        "username": {
+                            "type": "string"
+                        },
+                        "password": {
+                            "type": "string"
+                        }
                     },
-                    "instance": {
-                      "type": "string",
-                      "description": "A reference to a object in the list of mailhooks (Reference to id)"
-                    },
-                    "recipient": {
-                      "type": "string",
-                      "description": "The mailreciepeint"
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "instance",
-                    "recipient"
-                  ],
-                  "additionalProperties": false
-                },
-                {
-                  "type": "object",
-                  "description": "A twitter instance consists of the reference in the twitter Array and the type specified as twitter",
-                  "properties": {
-                    "type": {
-                      "type": "string",
-                      "description": "As we are creating a twitter API instance, this can only be twitter",
-                      "enum": [
-                        "twitter"
-                      ]
-                    },
-                    "instance": {
-                      "type": "string",
-                      "description": "A reference to a object in the list of webhooks (Reference to id)"
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "instance"
-                  ],
-                  "additionalProperties": false
+                    "additionalProperties": false
                 }
-              ]
             },
             "additionalProperties": false
-          }
         },
-        "required": [
-          "image",
-          "actions"
-        ],
-        "additionalProperties": false
-      }
-    },
-    "smtpServer": {
-      "type": "object",
-      "patternProperties": {
-        "^..*$": {
-          "type": "object",
-          "properties": {
-            "host": {
-              "type": "string",
-              "format": "hostname",
-              "default": "127.0.0.1"
+        "webHooks": {
+            "type": "object",
+            "patternProperties": {
+                "^..*$": {
+                    "type": "object",
+                    "properties": {
+                        "reqUrl": {
+                            "type": "string",
+                            "format": "uri"
+                        },
+                        "httpMethod": {
+                            "type": "string",
+                            "enum": ["POST", "GET", "PUT", "DELETE"],
+                            "default": "POST"
+                        },
+                        "httpHeaders": {
+                            "type": ["object", "null", "array", "string"],
+                            "default": null
+                        },
+                        "httpBody": {
+                            "type": ["object", "null", "array", "string"],
+                            "default": null
+                        }
+                    },
+                    "required": ["reqUrl"],
+                    "additionalProperties": false
+                }
             },
-            "port": {
-              "type": "number",
-              "minimum": 1,
-              "maximum": 65535,
-              "default": 25
+            "additionalProperties": false
+        },
+        "twitter": {
+            "type": "object",
+            "patternProperties": {
+                "^..*$": {
+                    "type": "object",
+                    "properties": {
+                        "appKey": {
+                            "type": "string",
+                            "minLength": 10
+                        },
+                        "appSecret": {
+                            "type": "string",
+                            "minLength": 20
+                        },
+                        "accessToken": {
+                            "type": "string",
+                            "minLength": 10
+                        },
+                        "accessSecret": {
+                            "type": "string",
+                            "minLength": 20
+                        },
+                        "message": {
+                            "type": "string",
+                            "default": "$msg"
+                        }
+                    },
+                    "required": [
+                        "appKey",
+                        "appSecret",
+                        "accessToken",
+                        "accessSecret"
+                    ],
+                    "additionalProperties": false
+                }
             },
-            "secure": {
-              "type": "boolean",
-              "default": true
-            },
-            "sendername": {
-              "type": "string",
-              "minLength": 3
-            },
-            "senderadress": {
-              "type": "string",
-              "format": "email"
-            },
-            "username": {
-              "type": "string"
-            },
-            "password": {
-              "type": "string"
-            }
-          },
-          "additionalProperties": false
+            "additionalProperties": false
         }
-      },
-      "additionalProperties": false
     },
-    "webHooks": {
-      "type": "object",
-      "patternProperties": {
-        "^..*$": {
-          "type": "object",
-          "properties": {
-            "reqUrl": {
-              "type": "string",
-              "format": "uri"
-            },
-            "httpMethod": {
-              "type": "string",
-              "enum": [
-                "POST",
-                "GET",
-                "PUT",
-                "DELETE"
-              ],
-              "default": "POST"
-            },
-            "httpHeaders": {
-              "type": [
-                "object",
-                "null",
-                "array",
-                "string"
-              ],
-              "default": null
-            },
-            "httpBody": {
-              "type": [
-                "object",
-                "null",
-                "array",
-                "string"
-              ],
-              "default": null
-            }
-          },
-          "required": [
-            "reqUrl"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "additionalProperties": false
-    },
-    "twitter": {
-      "type": "object",
-      "patternProperties": {
-        "^..*$": {
-          "type": "object",
-          "properties": {
-            "appKey": {
-              "type": "string",
-              "minLength": 10
-            },
-            "appSecret": {
-              "type": "string",
-              "minLength": 20
-            },
-            "accessToken": {
-              "type": "string",
-              "minLength": 10
-            },
-            "accessSecret": {
-              "type": "string",
-              "minLength": 20
-            },
-            "message": {
-              "type": "string",
-              "default": "$msg"
-            }
-          },
-          "required": [
-            "appKey",
-            "appSecret",
-            "accessToken",
-            "accessSecret"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "additionalProperties": false
-    }
-  },
-  "required": [
-    "notifyServices"
-  ],
-  "additionalProperties": false
+    "required": ["notifyServices"],
+    "additionalProperties": false
 }
