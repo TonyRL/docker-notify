@@ -1,4 +1,6 @@
 {
+    "dockerHubUsername": "example",
+    "dockerHubPassword": "123e4567-e89b-12d3-a456-426614174000",
     "checkInterval": 60,
     "notifyServices":[
         {

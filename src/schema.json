@@ -3,6 +3,14 @@
     "description": "The Config of docker-notify",
     "type": "object",
     "properties": {
+        "dockerHubUsername": {
+            "type": "string",
+            "description": "The username of docker hub"
+        },
+        "dockerHubPassword": {
+            "type": "string",
+            "description": "The password or token of docker hub"
+        },
         "checkInterval": {
             "description": "The interval checking for updates in Dockerhub (in Minutes)",
             "type": "integer",

@@ -32,6 +32,7 @@ const logger = {
 
 // Load config file
 let config;
+let dockerHubToken;
 
 try {
     config = require('./config.json');
@@ -108,15 +109,11 @@ const sendMail = function (msg, mailTransporter, smtpSenderName, smtpSenderAddre
     });
 };
 
-const getRepositoryInfo = function (user, name) {
-    return dockerAPI.repository(user, name);
-};
+const getRepositoryInfo = (user, name, token) => dockerAPI.repository(user, name, token);
 
-const getTagInfo = function (user, name) {
-    return dockerAPI.tags(user, name);
-};
+const getTagInfo = (user, name, token) => dockerAPI.tags(user, name, token);
 
-const checkRepository = function (job, repoCache) {
+const checkRepository = function (job, repoCache, token) {
     return new Promise((resolve, reject) => {
 
         const checkUpdateDates = function (repoInfo, tag) {
@@ -146,7 +143,7 @@ const checkRepository = function (job, repoCache) {
         const repository = job.image;
 
         if (repository.tag) {
-            getTagInfo(repository.user, repository.name).then((tags) => {
+            getTagInfo(repository.user, repository.name, token).then((tags) => {
                 const tagInfo = tags.filter((elem) => elem.name == repository.tag)[0];
 
                 if (tagInfo == undefined) {
@@ -159,7 +156,7 @@ const checkRepository = function (job, repoCache) {
                 checkUpdateDates(tagInfo, repository.tag);
             }).catch(logger.error);
         } else {
-            getRepositoryInfo(repository.user, repository.name).then(checkUpdateDates).catch((err) => {
+            getRepositoryInfo(repository.user, repository.name, token).then(checkUpdateDates).catch((err) => {
                 logger.error('Error while fetching repo info: ', err);
                 reject();
             });
@@ -167,7 +164,9 @@ const checkRepository = function (job, repoCache) {
     });
 };
 
-const checkForUpdates = function () {
+const checkForUpdates = async () => {
+    dockerHubToken = config.dockerHubUsername && config.dockerHubPassword ? await dockerAPI.token(config.dockerHubUsername, config.dockerHubPassword) : null;
+
     logger.log('Checking for updated repositories');
     Cache.getCache().then((cache) => {
         const repoChecks = [];
@@ -177,7 +176,7 @@ const checkForUpdates = function () {
                 key += ':' + job.image.tag;
             }
             logger.log('Checking: ', key);
-            repoChecks.push(checkRepository(job, cache[key]));
+            repoChecks.push(checkRepository(job, cache[key], dockerHubToken));
         }
         Promise.all(repoChecks).then((checkResult) => {
             const newCache = {};

@@ -1,35 +1,42 @@
 const axios = require('axios');
 
 class DockerAPI {
+    token(username, password) {
+        username = username.toLowerCase();
 
-    repository(user, name) {
+        const path = '/v2/users/login';
+
+        return this.requestToken(path, username, password);
+    }
+
+    repository(user, name, token) {
         user = user.toLowerCase();
 
         const path = `/v2/repositories/${user}/${name}`;
 
-        return this.request(path);
+        return this.request(path, null, null, token);
     }
 
-    tags(user, name) {
+    tags(user, name, token) {
         user = user.toLowerCase();
 
         const path = `/v2/repositories/${user}/${name}/tags`;
 
-        return this.requestAllPages(path);
+        return this.requestAllPages(path, token);
     }
 
-    requestAllPages(path) {
+    requestAllPages(path, token) {
         const pageSize = 100;
 
         return new Promise((resolve, reject) => {
-            this.request(path, 1, pageSize).then((firstPageResult) => {
+            this.request(path, 1, pageSize, token).then((firstPageResult) => {
                 const totalElementCount = firstPageResult.count;
                 const maxPage = Math.ceil(totalElementCount / pageSize);
 
                 const promises = [];
 
                 for (let i = 2; i <= maxPage; i++) {
-                    promises.push(this.request(path, i, pageSize));
+                    promises.push(this.request(path, i, pageSize, token));
                 }
 
                 Promise.all(promises).then((subsequentResults) => {
@@ -47,19 +54,39 @@ class DockerAPI {
         });
     }
 
-    request(path, page, pageSize) {
+    request(path, page, pageSize, token) {
         let url = `https://hub.docker.com${path}`;
 
         if (page && pageSize) {
             url += `?page_size=${pageSize}&page=${page}`;
         }
 
-        return axios({
-            method: 'GET',
-            url: url
-        }).then((res) => res.data);
+        return token
+            ? axios({
+                method: 'GET',
+                url,
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            }).then((res) => res.data)
+            : axios({
+                method: 'GET',
+                url,
+            }).then((res) => res.data);
     }
 
+    requestToken(path, username, password) {
+        const url = `https://hub.docker.com${path}`;
+
+        return axios({
+            method: 'POST',
+            url,
+            data: {
+                username,
+                password,
+            },
+        }).then((res) => res.data.token);
+    }
 }
 
 module.exports = { DockerAPI: DockerAPI };
