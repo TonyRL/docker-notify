@@ -3,7 +3,6 @@ const fs = require('fs');
 const cachePath = './cache/cache.json';
 
 class Cache {
-
     static getCache() {
         return new Promise((resolve, reject) => {
             fs.readFile(cachePath, 'utf8', (err, data) => {
@@ -44,7 +43,6 @@ class Cache {
             });
         });
     }
-
 }
 
 module.exports = Cache;

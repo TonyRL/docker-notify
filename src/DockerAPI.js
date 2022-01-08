@@ -29,28 +29,32 @@ class DockerAPI {
         const pageSize = 100;
 
         return new Promise((resolve, reject) => {
-            this.request(path, 1, pageSize, token).then((firstPageResult) => {
-                const totalElementCount = firstPageResult.count;
-                const maxPage = Math.ceil(totalElementCount / pageSize);
+            this.request(path, 1, pageSize, token)
+                .then((firstPageResult) => {
+                    const totalElementCount = firstPageResult.count;
+                    const maxPage = Math.ceil(totalElementCount / pageSize);
 
-                const promises = [];
+                    const promises = [];
 
-                for (let i = 2; i <= maxPage; i++) {
-                    promises.push(this.request(path, i, pageSize, token));
-                }
+                    for (let i = 2; i <= maxPage; i++) {
+                        promises.push(this.request(path, i, pageSize, token));
+                    }
 
-                Promise.all(promises).then((subsequentResults) => {
-                    subsequentResults.push(firstPageResult);
-                    // Extract the results from each of the requests
-                    const elementArray = subsequentResults.flatMap((result) => result.results);
+                    Promise.all(promises)
+                        .then((subsequentResults) => {
+                            subsequentResults.push(firstPageResult);
+                            // Extract the results from each of the requests
+                            const elementArray = subsequentResults.flatMap((result) => result.results);
 
-                    resolve(elementArray);
-                }).catch((error) => {
+                            resolve(elementArray);
+                        })
+                        .catch((error) => {
+                            reject(error);
+                        });
+                })
+                .catch((error) => {
                     reject(error);
                 });
-            }).catch((error) => {
-                reject(error);
-            });
         });
     }
 
@@ -63,16 +67,16 @@ class DockerAPI {
 
         return token
             ? axios({
-                method: 'GET',
-                url,
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            }).then((res) => res.data)
+                  method: 'GET',
+                  url,
+                  headers: {
+                      Authorization: `Bearer ${token}`,
+                  },
+              }).then((res) => res.data)
             : axios({
-                method: 'GET',
-                url,
-            }).then((res) => res.data);
+                  method: 'GET',
+                  url,
+              }).then((res) => res.data);
     }
 
     requestToken(path, username, password) {

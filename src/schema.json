@@ -41,19 +41,14 @@
                                         "type": {
                                             "type": "string",
                                             "description": "As we are creating a webhook, this can only be webHook",
-                                            "enum": [
-                                                "webHook"
-                                            ]
+                                            "enum": ["webHook"]
                                         },
                                         "instance": {
                                             "type": "string",
                                             "description": "A reference to a object in the list of webhooks (Reference to id)"
                                         }
                                     },
-                                    "required": [
-                                        "type",
-                                        "instance"
-                                    ],
+                                    "required": ["type", "instance"],
                                     "additionalProperties": false
                                 },
                                 {
@@ -63,9 +58,7 @@
                                         "type": {
                                             "type": "string",
                                             "description": "As we are creating a mailhook, this can only be mailHook",
-                                            "enum": [
-                                                "mailHook"
-                                            ]
+                                            "enum": ["mailHook"]
                                         },
                                         "instance": {
                                             "type": "string",
@@ -76,11 +69,7 @@
                                             "description": "The mailreciepeint"
                                         }
                                     },
-                                    "required": [
-                                        "type",
-                                        "instance",
-                                        "recipient"
-                                    ],
+                                    "required": ["type", "instance", "recipient"],
                                     "additionalProperties": false
                                 }
                             ]
@@ -88,10 +77,7 @@
                         "additionalProperties": false
                     }
                 },
-                "required": [
-                    "image",
-                    "actions"
-                ],
+                "required": ["image", "actions"],
                 "additionalProperties": false
             }
         },
@@ -148,12 +134,7 @@
                         },
                         "httpMethod": {
                             "type": "string",
-                            "enum": [
-                                "POST",
-                                "GET",
-                                "PUT",
-                                "DELETE"
-                            ],
+                            "enum": ["POST", "GET", "PUT", "DELETE"],
                             "default": "POST"
                         },
                         "httpHeaders": {
@@ -165,17 +146,13 @@
                             "default": null
                         }
                     },
-                    "required": [
-                        "reqUrl"
-                    ],
+                    "required": ["reqUrl"],
                     "additionalProperties": false
                 }
             },
             "additionalProperties": false
         }
     },
-    "required": [
-        "notifyServices"
-    ],
+    "required": ["notifyServices"],
     "additionalProperties": false
 }
