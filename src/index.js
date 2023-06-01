@@ -1,5 +1,5 @@
 const dockerAPI = new (require('./DockerAPI').DockerAPI)();
-const mailService = require('./mailService');
+const { mailService } = require('./mailService');
 const Cache = require('./Cache');
 const schema = require('./schema.json');
 const Ajv = require('ajv');
@@ -55,23 +55,23 @@ const notifyServices = config.notifyServices;
 // Validate things, that can currently not be validated by json schema
 // these things are: smtp-server referenced in notifyJob is existing and
 // webhooks referenced in notifyJob is existing
-if (!notifyServices.every((o) => o.actions.every((o2) => (o2.type === 'webHook' ? config.webHooks[o2.instance] : o2.type === 'mailHook' ? config.smtpServer[o2.instance] : false)))) {
+if (!notifyServices.every((service) => service.actions.every((action) => (action.type === 'webHook' ? config.webHooks[action.instance] : action.type === 'mailHook' ? config.smtpServer[action.instance] : false)))) {
     logger.error('Mail/Smtp Hooks that are referenced are not defined!');
     process.exit(3);
 }
 
-config.notifyServices.forEach((o) => {
-    const res = {};
-    let elem = o.image;
-    elem = elem.split('/');
-    res.user = elem.length > 1 ? elem[0] : 'library';
-    res.name = elem.length > 1 ? elem[1] : elem[0];
-    // get tag if it is set
-    if (res.name.split(':').length > 1) {
-        res.tag = res.name.split(':')[1];
-        res.name = res.name.split(':')[0];
-    }
-    o.image = res;
+config.notifyServices.forEach((service) => {
+    const imageParts = service.image.split('/');
+    const imageName = imageParts.at(-1);
+    const imageTag = imageName.split(':')?.[1] ?? 'latest';
+    const imageNameWithoutTag = imageName.split(':')[0];
+    const user = imageParts.length > 1 ? imageParts[0] : 'library';
+
+    service.image = {
+        user,
+        name: imageNameWithoutTag,
+        tag: imageTag,
+    };
 });
 
 const mailtransporterMap = new Map();
@@ -97,9 +97,9 @@ const sendMail = async (msg, mailTransporter, smtpSenderName, smtpSenderAddress,
         };
 
         const info = await mailTransporter.sendMail(mailOptions);
-        logger.log('Notification mail sent: ', info);
+        logger.log(`Notification mail sent to ${info}`);
     } catch (err) {
-        logger.error('Error while sending mail: ', err);
+        logger.error(`Error while sending mail: ${err}`);
     }
 };
 
@@ -152,7 +152,7 @@ const checkRepository = async (job, repoCache, token) => {
             return checkUpdateDates(repoInfo);
         }
     } catch (err) {
-        logger.error('Error while fetching repo info: ', err);
+        logger.error(`Error while fetching repo info: ${err}`);
         return;
     }
 };
@@ -161,15 +161,14 @@ const checkForUpdates = async () => {
     try {
         const dockerHubToken = config.dockerHubUsername && config.dockerHubPassword ? await dockerAPI.token(config.dockerHubUsername, config.dockerHubPassword) : null;
         const cache = await Cache.getCache();
-        const repoChecks = [];
-        for (const job of notifyServices) {
+        const repoChecks = notifyServices.map((job) => {
             let key = job.image.user + '/' + job.image.name;
             if (job.image.tag) {
                 key += ':' + job.image.tag;
             }
             logger.log('Checking: ', key);
-            repoChecks.push(checkRepository(job, cache[key], dockerHubToken));
-        }
+            return checkRepository(job, cache[key], dockerHubToken);
+        });
         const checkResult = await Promise.all(repoChecks);
 
         const newCache = {};
@@ -187,7 +186,7 @@ const checkForUpdates = async () => {
             }
             newCache[key] = cacheObj;
             if (res.updated) {
-                let updatedString = res.user == 'library' ? res.name : res.user + '/' + res.name;
+                let updatedString = res.user === 'library' ? res.name : res.user + '/' + res.name;
                 if (res.tag) {
                     updatedString += ':' + res.tag;
                 }
@@ -200,14 +199,14 @@ const checkForUpdates = async () => {
 
         await Cache.writeCache(JSON.stringify(newCache));
         if (updatedRepos.length > 0) {
-            updatedRepos.forEach((o) => {
-                o.job.actions.forEach(async (o2) => {
-                    if (o2.type == 'webHook') {
-                        const webHook = config.webHooks[o2.instance];
+            updatedRepos.forEach((repo) => {
+                repo.job.actions.forEach(async (action) => {
+                    if (action.type == 'webHook') {
+                        const webHook = config.webHooks[action.instance];
                         const message = webHook.httpBody;
                         Object.keys(message).forEach((key) => {
                             if (typeof message[key] == 'string') {
-                                message[key] = message[key].replace('$msg', "Docker image '" + o.updatedString + "' was updated:\nhttps://hub.docker.com/r/" + o.updatedString.split(':')[0] + '/tags');
+                                message[key] = message[key].replace('$msg', `Docker image '${repo.updatedString}' was updated:\nhttps://hub.docker.com/r/${repo.updatedString.split(':')[0]}/tags`);
                             }
                         });
 
@@ -218,16 +217,16 @@ const checkForUpdates = async () => {
                                 headers: webHook.httpHeaders,
                                 data: webHook.httpBody,
                             });
-                            logger.log('WebHook Action for image [' + JSON.stringify(o.job.image) + '] successfully. Response: ', response.data);
+                            logger.log(`WebHook Action for image [${JSON.stringify(repo.job.image)}] successfully. Response: ${response.data}`);
                         } catch (error) {
-                            logger.error('WebHook Action for image [' + JSON.stringify(o.job.image) + '] failed');
+                            logger.error(`WebHook Action for image [${JSON.stringify(repo.job.image)}] failed`);
                             logger.log(error);
                         }
-                    } else if (o2.type == 'mailHook') {
-                        await mailHookSend(o2.instance, o2.recipient, o.updatedString, "Docker image '" + o.updatedString + "' was updated:\n" + 'https://hub.docker.com/r/' + o.updatedString.split(':')[0] + '/tags');
+                    } else if (action.type == 'mailHook') {
+                        await mailHookSend(action.instance, action.recipient, repo.updatedString, `Docker image '${repo.updatedString}' was updated:\nhttps://hub.docker.com/r/${repo.updatedString.split(':')[0]}/tags`);
                     } else {
-                        logger.error('Trying to execute an unknown hook(' + o2.type + '), falling back to printing to console');
-                        logger.error('Image: ' + JSON.stringify(o.job.image));
+                        logger.error(`Trying to execute an unknown hook(${action.type}), falling back to printing to console`);
+                        logger.error(`Image: ${JSON.stringify(repo.job.image)}`);
                     }
                 });
             });

@@ -12,4 +12,6 @@ const mailService = (host, port, secure, username, password) =>
         },
     });
 
-module.exports = mailService;
+module.exports = {
+    mailService,
+};
