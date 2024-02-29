@@ -14,7 +14,7 @@
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "axios": "^1.6.7",
-    "nodemailer": "^6.9.10"
+    "nodemailer": "^6.9.11"
   },
   "devDependencies": {
     "eslint": "^8.57.0",
