@@ -1,5 +1,11 @@
 # Docker-Notify
 
+> [!WARNING]
+> **This project is no longer maintained.**
+>
+> This repository has been rewritten and is now maintained at:
+> **[https://github.com/TonyRL/docker-notify-ts](https://github.com/TonyRL/docker-notify-ts)**
+
 Docker-Notify can send you a mail or call a webhook when a Docker image gets updated. 
 
 If you are trying to set docker-notify up on a Synology, [here](Synology%20Readme.md) is a guide for that.
